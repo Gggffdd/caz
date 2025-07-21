@@ -3,12 +3,14 @@ import random
 import asyncio
 import logging
 import datetime
+import json
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.client.default import DefaultBotProperties
+from aiogram.types import WebAppData
 
 # Настройка логирования
 logging.basicConfig(
@@ -18,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Конфигурация бота
-BOT_TOKEN = "8006714567:AAFlk5ysAdnrPIT7FtgbPqEPxlVd0MD8VE0"  # Замените на реальный токен от @BotFather
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 dp = Dispatcher()
 
@@ -27,10 +29,10 @@ INITIAL_BALANCE = 1000
 MIN_BET = 10
 MAX_BET = 500
 JACKPOT = 5000
-FREE_SPINS_AFTER = 50  # Бесплатные спины после N игр
-DAILY_BONUS = 500
-REFERRAL_BONUS = 200
-LEVEL_EXPERIENCE = [0, 10, 30, 60, 100, 150, 210, 280, 360, 450]  # Опыт для уровней
+DAILY_BONUS = 50
+REFERRAL_BONUS = 100
+FREE_SPINS_AFTER = 20
+LEVEL_EXPERIENCE = [0, 100, 250, 500, 1000, 2000, 4000, 8000, 15000, 30000]
 
 # Символы для слотов (эмодзи)
 SLOT_SYMBOLS = {
@@ -85,6 +87,13 @@ def get_main_keyboard(user_id):
         InlineKeyboardButton(text="🎯 Моя статистика", callback_data="stats"),
         InlineKeyboardButton(text="🏅 Достижения", callback_data="achievements"),
         InlineKeyboardButton(text="ℹ️ Помощь", callback_data="help")
+    )
+    # Добавляем кнопку для Mini App
+    builder.row(
+        InlineKeyboardButton(
+            text="🕹️ Играть в Fullscreen", 
+            web_app=WebAppInfo(url=f"https://yourdomain.com/webapp?user_id={user_id}")
+        )
     )
     return builder.as_markup()
 
@@ -375,6 +384,129 @@ async def cmd_start(message: types.Message):
         welcome_text,
         reply_markup=get_main_keyboard(user_id)
     )
+
+# Обработчик для Mini App
+@dp.message(WebAppData)
+async def web_app_data(message: types.Message):
+    try:
+        data = json.loads(message.web_app_data.data)
+        user_id = message.from_user.id
+        
+        if user_id not in user_data:
+            await message.answer("Пожалуйста, начните игру с /start")
+            return
+            
+        action = data.get("action")
+        
+        if action == "get_user_data":
+            user = user_data[user_id]
+            response = {
+                "status": "success",
+                "data": {
+                    "balance": user["balance"],
+                    "current_bet": user["current_bet"],
+                    "bonuses": user["bonuses"],
+                    "level": user["level"],
+                    "experience": user["experience"],
+                    "next_level_exp": LEVEL_EXPERIENCE[user["level"]] if user["level"] < len(LEVEL_EXPERIENCE) else 0,
+                    "achievements": user.get("achievements", [])
+                }
+            }
+            await message.answer(json.dumps(response))
+            
+        elif action == "spin":
+            user = user_data[user_id]
+            bet = data.get("bet", user["current_bet"])
+            
+            if bet < MIN_BET or bet > MAX_BET:
+                await message.answer(json.dumps({"status": "error", "message": "Недопустимая ставка"}))
+                return
+                
+            if user["balance"] < bet and user["bonuses"] == 0:
+                await message.answer(json.dumps({"status": "error", "message": "Недостаточно средств"}))
+                return
+                
+            use_bonus = False
+            if user["bonuses"] > 0:
+                user["bonuses"] -= 1
+                use_bonus = True
+            else:
+                user["balance"] -= bet
+                
+            spin_result = await spin_reels()
+            win_info = check_win(spin_result, bet)
+            win_amount = win_info["total_win"]
+            user["balance"] += win_amount
+            user["total_spins"] += 1
+            
+            if win_amount > 0:
+                user["total_wins"] += 1
+                if win_amount > user["biggest_win"]:
+                    user["biggest_win"] = win_amount
+            
+            # Добавляем опыт
+            exp_gain = min(1 + win_amount // 100, 10)
+            user["experience"] += exp_gain
+            
+            # Проверяем повышение уровня
+            level_up = False
+            while user["level"] < len(LEVEL_EXPERIENCE) and user["experience"] >= LEVEL_EXPERIENCE[user["level"]]:
+                user["level"] += 1
+                level_up = True
+                level_bonus = user["level"] * 100
+                user["balance"] += level_bonus
+            
+            # Проверка достижений
+            new_achievements = check_achievements(user_id, win_amount, win_info["jackpot_won"])
+            
+            response = {
+                "status": "success",
+                "data": {
+                    "reels": spin_result,
+                    "win_amount": win_amount,
+                    "winning_lines": win_info["winning_lines"],
+                    "bonus_triggered": win_info["bonus_triggered"],
+                    "free_spins": win_info["free_spins"],
+                    "jackpot_won": win_info["jackpot_won"],
+                    "new_balance": user["balance"],
+                    "use_bonus": use_bonus,
+                    "remaining_bonuses": user["bonuses"],
+                    "level_up": level_up,
+                    "new_level": user["level"] if level_up else None,
+                    "new_achievements": new_achievements,
+                    "experience": user["experience"],
+                    "next_level_exp": LEVEL_EXPERIENCE[user["level"]] if user["level"] < len(LEVEL_EXPERIENCE) else 0
+                }
+            }
+            
+            if win_info["bonus_triggered"]:
+                user["bonuses"] += win_info["free_spins"]
+                response["data"]["remaining_bonuses"] = user["bonuses"]
+            
+            await message.answer(json.dumps(response))
+            
+        elif action == "change_bet":
+            user = user_data[user_id]
+            new_bet = data.get("bet", MIN_BET)
+            
+            if MIN_BET <= new_bet <= MAX_BET:
+                user["current_bet"] = new_bet
+                await message.answer(json.dumps({
+                    "status": "success",
+                    "new_bet": new_bet
+                }))
+            else:
+                await message.answer(json.dumps({
+                    "status": "error",
+                    "message": f"Ставка должна быть между {MIN_BET} и {MAX_BET}"
+                }))
+                
+    except Exception as e:
+        logger.error(f"WebApp error: {e}")
+        await message.answer(json.dumps({
+            "status": "error",
+            "message": "Произошла ошибка"
+        }))
 
 @dp.callback_query(lambda c: c.data == "spin")
 async def process_spin(callback: types.CallbackQuery):
