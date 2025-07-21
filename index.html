@@ -1,52 +1,176 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dog House Slots</title>
+    <title>Dog House Slots - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-button-color: #2481cc;
+            --tg-theme-button-text-color: #ffffff;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--tg-theme-secondary-bg-color, #f8f8f8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: var(--tg-theme-text-color);
+            margin-top: 0;
+        }
+
+        .btn {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .user-data {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+        }
+
+        .debug-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
-    <div id="app">
-        <h1>Добро пожаловать!</h1>
-        <div id="user-data">Загрузка данных...</div>
+    <div class="container">
+        <div class="card">
+            <h1>🎰 Dog House Slots</h1>
+            
+            <div id="user-info" class="user-data">
+                <p><strong>Статус:</strong> <span id="status">Инициализация...</span></p>
+                <p><strong>User ID:</strong> <span id="user-id">—</span></p>
+                <p><strong>Имя:</strong> <span id="user-name">—</span></p>
+                <p><strong>Платформа:</strong> <span id="platform">—</span></p>
+            </div>
+
+            <button id="play-btn" class="btn" disabled>Начать игру</button>
+        </div>
+
+        <div class="debug-info" id="debug-console">
+            <strong>Отладочная информация:</strong>
+            <div id="debug-log"></div>
+        </div>
     </div>
 
     <script>
-        // 1. Инициализация Telegram WebApp
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        
-        // 2. Получаем параметры из URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('user_id');
-        
-        // 3. Получаем данные пользователя из Telegram
-        const tgUser = tg.initDataUnsafe.user;
-        
-        // 4. Отображаем информацию
-        document.getElementById('user-data').innerHTML = `
-            <p><strong>User ID из URL:</strong> ${userId || 'не получен'}</p>
-            <p><strong>Telegram ID:</strong> ${tgUser?.id || 'не доступен'}</p>
-            <p><strong>Имя:</strong> ${tgUser?.first_name || ''} ${tgUser?.last_name || ''}</p>
-            <p><strong>Платформа:</strong> ${tg.platform}</p>
-        `;
-        
-        // 5. Настройка основной кнопки
-        tg.MainButton.setText("Закрыть").show();
-        tg.MainButton.onClick(() => tg.close());
-        
-        // Для отладки
-        console.log('Telegram WebApp initData:', tg.initDataUnsafe);
+        // Инициализация приложения
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        function initApp() {
+            const debugLog = document.getElementById('debug-log');
+            const statusElement = document.getElementById('status');
+            
+            function log(message) {
+                debugLog.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+                console.log(message);
+            }
+
+            try {
+                log("Запуск инициализации Mini App...");
+                
+                // 1. Проверяем загружен ли Telegram WebApp
+                if (!window.Telegram || !window.Telegram.WebApp) {
+                    throw new Error("Telegram WebApp SDK не загружен");
+                }
+
+                const tg = window.Telegram.WebApp;
+                log("Telegram WebApp SDK успешно загружен");
+
+                // 2. Получаем параметры из URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const userIdFromUrl = urlParams.get('user_id');
+                log(`User ID из URL: ${userIdFromUrl || 'не указан'}`);
+
+                // 3. Получаем данные из Telegram WebApp
+                const tgUser = tg.initDataUnsafe.user;
+                const themeParams = tg.themeParams;
+                
+                // 4. Определяем платформу
+                const platform = tg.platform || 'unknown';
+                log(`Платформа: ${platform}`);
+
+                // 5. Отображаем данные пользователя
+                const displayUserId = tgUser?.id || userIdFromUrl || 'не определен';
+                const displayUserName = tgUser ? 
+                    [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') : 
+                    'Гость';
+                
+                document.getElementById('user-id').textContent = displayUserId;
+                document.getElementById('user-name').textContent = displayUserName;
+                document.getElementById('platform').textContent = platform;
+                statusElement.textContent = "Готово";
+
+                // 6. Настраиваем кнопку игры
+                const playBtn = document.getElementById('play-btn');
+                playBtn.disabled = false;
+                playBtn.addEventListener('click', () => {
+                    tg.showAlert(`Привет, ${displayUserName}! Игра скоро будет доступна.`);
+                });
+
+                // 7. Настраиваем основную кнопку Telegram
+                tg.MainButton.setText("Закрыть").show();
+                tg.MainButton.onClick(() => tg.close());
+
+                // 8. Раскрываем Mini App на весь экран
+                tg.expand();
+                log("Mini App успешно инициализирована");
+
+                // 9. Адаптируем под тему Telegram
+                if (themeParams) {
+                    document.documentElement.style.setProperty(
+                        '--tg-theme-bg-color', 
+                        themeParams.bg_color || '#ffffff'
+                    );
+                    document.documentElement.style.setProperty(
+                        '--tg-theme-text-color', 
+                        themeParams.text_color || '#000000'
+                    );
+                }
+
+            } catch (error) {
+                log(`Ошибка инициализации: ${error.message}`);
+                statusElement.textContent = "Ошибка загрузки";
+                document.getElementById('user-id').textContent = error.message;
+            }
+        }
     </script>
 </body>
 </html>
