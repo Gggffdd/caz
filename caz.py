@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Конфигурация бота
 BOT_TOKEN = "8006714567:AAFlk5ysAdnrPIT7FtgbPqEPxlVd0MD8VE0"
+WEB_APP_URL = "https://caz-mj5j43cm9-gggffdds-projects.vercel.app"
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 dp = Dispatcher()
 
