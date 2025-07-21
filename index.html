@@ -2,65 +2,51 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dog House Slots</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--tg-theme-bg-color, #18222d);
-            color: var(--tg-theme-text-color, #ffffff);
-            text-align: center;
-            padding: 20px;
+            font-family: Arial, sans-serif;
             margin: 0;
-        }
-        .slot-machine {
-            max-width: 100%;
-            margin: 20px auto;
-        }
-        .reels {
-            font-size: 52px;
-            letter-spacing: 15px;
-            margin: 30px 0;
-            min-height: 60px;
-        }
-        button {
-            padding: 12px 24px;
-            font-size: 18px;
-            background: var(--tg-theme-button-color, #2481cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            border-radius: 10px;
-            margin: 10px;
-            cursor: pointer;
-        }
-        .panel {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .info {
-            background: var(--tg-theme-secondary-bg-color, #2c3e50);
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 16px;
+            padding: 20px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
         }
     </style>
 </head>
 <body>
-    <div class="slot-machine">
-        <h1>🎰 DOG HOUSE SLOTS</h1>
-        
-        <div class="panel">
-            <div class="info" id="balance">1000₿</div>
-            <div class="info" id="bet">Ставка: 50₿</div>
-        </div>
-        
-        <div class="reels" id="reels">🌀 🌀 🌀</div>
-        
-        <button id="spin-btn">SPIN!</button>
+    <div id="app">
+        <h1>Добро пожаловать!</h1>
+        <div id="user-data">Загрузка данных...</div>
     </div>
-    
-    <script src="app.js"></script>
+
+    <script>
+        // 1. Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        // 2. Получаем параметры из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user_id');
+        
+        // 3. Получаем данные пользователя из Telegram
+        const tgUser = tg.initDataUnsafe.user;
+        
+        // 4. Отображаем информацию
+        document.getElementById('user-data').innerHTML = `
+            <p><strong>User ID из URL:</strong> ${userId || 'не получен'}</p>
+            <p><strong>Telegram ID:</strong> ${tgUser?.id || 'не доступен'}</p>
+            <p><strong>Имя:</strong> ${tgUser?.first_name || ''} ${tgUser?.last_name || ''}</p>
+            <p><strong>Платформа:</strong> ${tg.platform}</p>
+        `;
+        
+        // 5. Настройка основной кнопки
+        tg.MainButton.setText("Закрыть").show();
+        tg.MainButton.onClick(() => tg.close());
+        
+        // Для отладки
+        console.log('Telegram WebApp initData:', tg.initDataUnsafe);
+    </script>
 </body>
 </html>
