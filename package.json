@@ -1,8 +1,7 @@
 {
-  "name": "telegram-mini-app",
+  "name": "dog-house-slots",
   "version": "1.0.0",
-  "description": "Simple Telegram Mini App",
-  "main": "server.js",
+  "description": "Telegram Mini App for Slot Game",
   "scripts": {
     "start": "node server.js"
   },
