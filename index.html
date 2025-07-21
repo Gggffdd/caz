@@ -2,38 +2,65 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Dog House Slots</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { 
-            font-family: Arial, sans-serif;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--tg-theme-bg-color, #18222d);
+            color: var(--tg-theme-text-color, #ffffff);
             text-align: center;
             padding: 20px;
+            margin: 0;
         }
         .slot-machine {
-            margin-top: 50px;
+            max-width: 100%;
+            margin: 20px auto;
         }
         .reels {
-            font-size: 48px;
-            letter-spacing: 10px;
-            margin: 20px 0;
+            font-size: 52px;
+            letter-spacing: 15px;
+            margin: 30px 0;
+            min-height: 60px;
         }
         button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #0088cc;
-            color: white;
+            padding: 12px 24px;
+            font-size: 18px;
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        .panel {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .info {
+            background: var(--tg-theme-secondary-bg-color, #2c3e50);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 16px;
         }
     </style>
 </head>
 <body>
     <div class="slot-machine">
         <h1>🎰 DOG HOUSE SLOTS</h1>
-        <div class="reels" id="reels">- - -</div>
+        
+        <div class="panel">
+            <div class="info" id="balance">1000₿</div>
+            <div class="info" id="bet">Ставка: 50₿</div>
+        </div>
+        
+        <div class="reels" id="reels">🌀 🌀 🌀</div>
+        
         <button id="spin-btn">SPIN!</button>
     </div>
+    
     <script src="app.js"></script>
 </body>
 </html>
