@@ -2,15 +2,36 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Dog House Slots</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { 
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .slot-machine {
+            margin-top: 50px;
+        }
+        .reels {
+            font-size: 48px;
+            letter-spacing: 10px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
     <div class="slot-machine">
         <h1>🎰 DOG HOUSE SLOTS</h1>
-        <div class="reels" id="reels"></div>
+        <div class="reels" id="reels">- - -</div>
         <button id="spin-btn">SPIN!</button>
     </div>
     <script src="app.js"></script>
