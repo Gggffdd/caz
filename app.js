@@ -1,50 +1,91 @@
-const tg = window.Telegram.WebApp;
-tg.expand();
+class MiniApp {
+  constructor() {
+    this.tg = window.Telegram?.WebApp;
+    this.init();
+  }
 
-// Элементы интерфейса
-const reelsElement = document.getElementById('reels');
-const spinBtn = document.getElementById('spin-btn');
-const balanceElement = document.getElementById('balance');
-const betElement = document.getElementById('bet');
+  async init() {
+    try {
+      // 1. Инициализация WebApp
+      if (!this.tg) throw new Error('Telegram WebApp not loaded');
+      
+      this.tg.expand();
+      this.tg.enableClosingConfirmation();
+      
+      // 2. Получение данных пользователя
+      const user = this.tg.initDataUnsafe.user || {};
+      const userId = user.id || new URLSearchParams(window.location.search).get('user_id');
+      
+      // 3. Валидация данных
+      const isValid = await this.validateData();
+      if (!isValid) throw new Error('Invalid init data');
+      
+      // 4. Загрузка данных пользователя
+      const balance = await this.fetchBalance(userId);
+      
+      // 5. Инициализация UI
+      this.initUI(user, balance);
+      
+      console.log('MiniApp initialized successfully');
+    } catch (error) {
+      console.error('Initialization error:', error);
+      this.showError(error.message);
+    }
+  }
 
-// Символы для слотов
-const symbols = ["🍒", "🍋", "🍊", "⭐", "7️⃣", "💎", "🐶", "🎁"];
+  async validateData() {
+    if (!this.tg.initData) return true; // Пропускаем если нет данных
+    
+    try {
+      const response = await fetch('/api/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: this.tg.initData })
+      });
+      
+      const { valid } = await response.json();
+      return valid;
+    } catch (error) {
+      return false;
+    }
+  }
 
-// Получаем начальные данные от бота
-const initData = tg.initDataUnsafe;
-let userBalance = initData.user?.balance || 1000;
-let currentBet = initData.user?.bet || 50;
+  async fetchBalance(userId) {
+    const response = await fetch(`/api/balance/${userId}`);
+    return await response.json();
+  }
 
-// Обновляем интерфейс
-function updateUI() {
-    balanceElement.textContent = `${userBalance}₿`;
-    betElement.textContent = `Ставка: ${currentBet}₿`;
+  initUI(user, balance) {
+    // Обновление DOM
+    document.getElementById('user-name').textContent = 
+      [user.first_name, user.last_name].filter(Boolean).join(' ') || 'Гость';
+    
+    document.getElementById('user-balance').textContent = 
+      `${balance.balance}${balance.currency}`;
+    
+    // Инициализация кнопок
+    this.tg.MainButton
+      .setText('Закрыть')
+      .onClick(() => this.tg.close())
+      .show();
+    
+    document.getElementById('spin-btn').addEventListener('click', () => {
+      this.tg.showAlert(`Ваш баланс: ${balance.balance}${balance.currency}`);
+    });
+  }
+
+  showError(message) {
+    document.getElementById('app-container').innerHTML = `
+      <div class="error">
+        <h3>Ошибка</h3>
+        <p>${message}</p>
+        <button onclick="window.location.reload()">Перезагрузить</button>
+      </div>
+    `;
+  }
 }
 
-// Обработчик спина
-spinBtn.addEventListener('click', () => {
-    // Генерируем результат
-    const result = [
-        symbols[Math.floor(Math.random() * symbols.length)],
-        symbols[Math.floor(Math.random() * symbols.length)],
-        symbols[Math.floor(Math.random() * symbols.length)]
-    ];
-    
-    // Отображаем результат
-    reelsElement.textContent = result.join(' ');
-    
-    // Отправляем данные боту
-    tg.sendData(JSON.stringify({ 
-        action: "spin",
-        bet: currentBet,
-        symbols: result
-    }));
-    
-    // Визуальные эффекты
-    spinBtn.disabled = true;
-    setTimeout(() => spinBtn.disabled = false, 1000);
+// Запуск приложения
+document.addEventListener('DOMContentLoaded', () => {
+  new MiniApp();
 });
-
-// Инициализация
-updateUI();
-tg.ready();
