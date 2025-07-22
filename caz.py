@@ -20,8 +20,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Конфигурация бота
-BOT_TOKEN = "7523520150:AAGMPibPAl8D0I0E6ZeNR3zuIp0qKcshXN0"
-WEB_APP_URL = "https://caz-mj5j43cm9-gggffdds-projects.vercel.app"
+BOT_TOKEN = "7523520150:AAGMPibPAl8D0I0E6ZeNR3zuIp0qKcshXN0"  # Замените на реальный токен
+WEB_APP_URL = "https://caz-weld.vercel.app"  # Замените на ваш домен
 bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
 dp = Dispatcher()
 
