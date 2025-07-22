@@ -6,7 +6,7 @@
       "use": "@vercel/node"
     },
     {
-      "src": "public/*",
+      "src": "public/**",
       "use": "@vercel/static"
     }
   ],
@@ -17,12 +17,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "public/$1",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Security-Policy": "default-src 'self' https://telegram.org; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline';",
-        "X-Frame-Options": "SAMEORIGIN"
-      }
+      "dest": "public/$1"
     }
   ],
   "env": {
