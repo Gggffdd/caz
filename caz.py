@@ -93,7 +93,7 @@ def get_main_keyboard(user_id):
     builder.row(
         InlineKeyboardButton(
             text="🕹️ Играть в Fullscreen", 
-            web_app=WebAppInfo(url=f"{WEB_APP_URL}?user_id={user_id}")
+            web_app=WebAppInfo(url=f"{WEB_APP_URL}/?user_id={user_id}")
         )
     )
     return builder.as_markup()
